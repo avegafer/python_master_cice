@@ -6,7 +6,7 @@ if csv_filename == '':
     print('Setea la ruta completa del fichero CSV')
     exit()
 
-aggregator = MatchesFactsAggregator()
+aggregator = MatchesFactsAggregator(2)
 seasons = utils.build_seasons('primera', 1928)
 seasons.append('primera/2017-18')
 

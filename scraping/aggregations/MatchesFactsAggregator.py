@@ -12,14 +12,14 @@ class MatchesFactsAggregator:
     Para modificar los ficheros que genera hay que definir el template de los registros que se van
     generando en self.counter_template, y poner conforme los valores en _update_counters
     '''
-    def __init__(self):
+    def __init__(self, log_detail_level = 0):
         self.prefix = 'etl'
         self.mongo_wrapper = PrefixedMongoWrapper(self.prefix)
         self.collection = 'results_all'
         self.results = []
 
         self.counters = {}
-        self.logger = Logger(2)
+        self.logger = Logger(log_detail_level)
 
         #Diccionario con los datos recientes. Ver self._update_counters
         self.teams_recent_history = {}
@@ -138,6 +138,8 @@ class MatchesFactsAggregator:
         repo.to_csv(filename)
 
     def _process_match(self, match):
+
+        self.logger.debug('processing ' + str(match))
 
         home_stats = self.counters[match['home']]
         away_stats = self.counters[match['away']]
