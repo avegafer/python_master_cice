@@ -24,26 +24,13 @@ class MatchesFactsAggregator:
         #Diccionario con los datos recientes. Ver self._update_counters
         self.teams_recent_history = {}
         self.counter_template = {
-            'played_home': 0,
-            'played_away': 0,
+            #'played_home': 0,
+            #'played_away': 0,
 
-            'score_competition_home': 0,
-            'score_competition_away': 0,
+            'score_competition': 0,
 
-            'matches_won_home': 0,
-            'matches_won_away': 0,
-
-            'matches_tied_home': 0,
-            'matches_tied_away': 0,
-
-            'matches_lost_home': 0,
-            'matches_lost_away': 0,
-
-            'goals_scored_home': 0,
-            'goals_scored_away': 0,
-
-            'goals_conceded_home': 0,
-            'goals_conceded_away': 0,
+            'goals_scored': 0,
+            'goals_conceded': 0,
 
             'num_days_without_goals': 0,
             'num_days_without_victory': 0,
@@ -59,11 +46,11 @@ class MatchesFactsAggregator:
         if match_winner != '':
 
             # Goles hechos por cada equipo
-            self._add_to_counter(match['home'], 'goals_scored_home', match['score_home'])
-            self._add_to_counter(match['away'], 'goals_scored_away', match['score_away'])
+            self._add_to_counter(match['home'], 'goals_scored', match['score_home'])
+            self._add_to_counter(match['away'], 'goals_scored', match['score_away'])
 
-            self._add_to_counter(match['home'], 'goals_conceded_home', match['score_away'])
-            self._add_to_counter(match['away'], 'goals_conceded_away', match['score_home'])
+            self._add_to_counter(match['home'], 'goals_conceded', match['score_away'])
+            self._add_to_counter(match['away'], 'goals_conceded', match['score_home'])
 
             # añado al historiar los goles hechos
             self.teams_recent_history[match['home']]['goals'].append(int(match['score_home']))
@@ -73,23 +60,12 @@ class MatchesFactsAggregator:
             self._set_counter(match['home'], 'ranking', sum(self.teams_recent_history[match['home']]['goals'][-5:]))
             self._set_counter(match['away'], 'ranking', sum(self.teams_recent_history[match['away']]['goals'][-5:]))
 
-            # Partidos jugados
-            self._add_to_counter(match['home'], 'played_home', 1)
-            self._add_to_counter(match['away'], 'played_away', 1)
-
-            # Partidos ganados, empatados, perdidos
-            key_map = {'home': 'matches_won_home', 'away': 'matches_lost_home', 'none': 'matches_tied_home'}
-            self._add_to_counter(match['home'], key_map[match_winner], 1)
-
-            key_map = {'home': 'matches_lost_away', 'away': 'matches_won_away', 'none': 'matches_tied_away'}
-            self._add_to_counter(match['away'], key_map[match_winner], 1)
-
             # Puntos
             key_map = {'home': 3, 'away': 0, 'none': 1}
-            self._add_to_counter(match['home'], 'score_competition_home', key_map[match_winner])
+            self._add_to_counter(match['home'], 'score_competition', key_map[match_winner])
 
             key_map = {'home': 0, 'away': 3, 'none': 1}
-            self._add_to_counter(match['away'], 'score_competition_away', key_map[match_winner])
+            self._add_to_counter(match['away'], 'score_competition', key_map[match_winner])
 
             # Días sin ganar
             if match_winner == 'home':
@@ -121,18 +97,18 @@ class MatchesFactsAggregator:
         self._init_counters()
         for match in self._collection().find({'season': season}).sort([('day_num', pymongo.ASCENDING)]):
             entry = self._process_match(match)
-
-            entry['season'] = match['season']
-            entry['day_num'] = match['day_num']
-
-            entry['team_home'] = match['home']
-            entry['team_away'] = match['away']
-
-            entry['winner'] = self._winner(match)
             if entry['winner'] != '':
                 self._add_to_results(entry)
 
+    def process_matches_to_play(self, season):
+        self._init_counters()
+        for match in self._collection().find({'season': season}).sort([('day_num', pymongo.ASCENDING)]):
+            entry = self._process_match(match)
+            if entry['winner'] == '':
+                self._add_to_results(entry)
 
+    def reset(self):
+        self.results = []
 
     def write_data_mongo(self):
         '''
@@ -175,6 +151,22 @@ class MatchesFactsAggregator:
             entry[key + '_away'] = away_stats[key]
 
         self._update_counters(match)
+
+        entry['season'] = match['season']
+        entry['day_num'] = match['day_num']
+
+        entry['team_home'] = match['home']
+        entry['team_away'] = match['away']
+
+        entry['score_home'] = match['score_home']
+        entry['score_away'] = match['score_away']
+
+        #pongo coefficientes
+        entry['score_competition_diff'] = 2 * (self.counters[match['home']]['score_competition'] - self.counters[match['away']]['score_competition'])
+        entry['ranking_home'] = 2 * entry['ranking_home']
+        entry['ranking_away'] = 2 * entry['ranking_away']
+        entry['winner'] = self._winner(match)
+
         return entry
 
     def _winner(self, match):
