@@ -92,6 +92,41 @@ class MatchesFactsAggregator:
                 self._add_to_counter(match['away'], 'num_days_without_goals', 1)
 
 
+    def _generate_tournament_positions(self):
+        tournament_scores = {}
+
+        raw_data = self.counters
+
+        for team in raw_data.keys():
+
+            score_competition = raw_data[team]['score_competition']
+
+            if score_competition not in tournament_scores.keys():
+                tournament_scores[score_competition] = []
+
+            tournament_scores[score_competition].append(team)
+
+        tournament_positions = {}
+        current_position = 1
+        for team_score in reversed(sorted(tournament_scores)):
+
+            if current_position not in tournament_positions:
+                tournament_positions[current_position] = []
+
+            tournament_positions[current_position] += tournament_scores[team_score]
+            current_position += 1
+
+        for x in tournament_scores.keys():
+            print(x)
+            print(tournament_scores[x])
+
+        print("---------------------")
+
+        for x in tournament_positions.keys():
+            print(x)
+            print(tournament_positions[x])
+
+
 
     def process_matches_played(self, season):
         self._init_counters()
@@ -101,7 +136,7 @@ class MatchesFactsAggregator:
                 self._add_to_results(entry)
 
     def process_matches_to_play(self, season):
-        self._init_counters()
+        self._init_counters(season)
         for match in self._collection().find({'season': season}).sort([('day_num', pymongo.ASCENDING)]):
             entry = self._process_match(match)
             if entry['winner'] == '':
@@ -191,11 +226,11 @@ class MatchesFactsAggregator:
     def _set_counter(self, team, key, value):
         self.counters[team][key] = value
 
-    def _init_counters(self):
+    def _init_counters(self, season):
         self.counters = {}
         self.teams_recent_history = {}
 
-        for team in self._collection().find().distinct("home"):
+        for team in self._collection().find({'season': season}).distinct("home"):
             self.counters[team] = self.counter_template.copy()
             self.teams_recent_history[team] = {'goals': []}
 
