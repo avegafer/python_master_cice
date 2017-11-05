@@ -109,6 +109,7 @@ class MatchesFactsAggregator:
 
     def reset(self):
         self.results = []
+        self._init_counters()
 
     def write_data_mongo(self):
         '''
