@@ -19,6 +19,7 @@ class MatchesFactsAggregator:
         self.results = []
 
         self.counters = {}
+        self.tournament_positions = {}
         self.logger = Logger(log_detail_level)
 
         #Diccionario con los datos recientes. Ver self._update_counters
@@ -91,6 +92,8 @@ class MatchesFactsAggregator:
             else:
                 self._add_to_counter(match['away'], 'num_days_without_goals', 1)
 
+            self._generate_tournament_positions()
+
 
     def _generate_tournament_positions(self):
         tournament_scores = {}
@@ -116,20 +119,15 @@ class MatchesFactsAggregator:
             tournament_positions[current_position] += tournament_scores[team_score]
             current_position += 1
 
-        for x in tournament_scores.keys():
-            print(x)
-            print(tournament_scores[x])
+        result = {}
+        for current_position in tournament_positions.keys():
+            for team in tournament_positions[current_position]:
+                result[team] = current_position
 
-        print("---------------------")
-
-        for x in tournament_positions.keys():
-            print(x)
-            print(tournament_positions[x])
-
-
+        self.tournament_positions = result
 
     def process_matches_played(self, season):
-        self._init_counters()
+        self._init_counters(season)
         for match in self._collection().find({'season': season}).sort([('day_num', pymongo.ASCENDING)]):
             entry = self._process_match(match)
             if entry['winner'] != '':
@@ -142,9 +140,6 @@ class MatchesFactsAggregator:
             if entry['winner'] == '':
                 self._add_to_results(entry)
 
-    def reset(self):
-        self.results = []
-        self._init_counters()
 
     def write_data_mongo(self):
         '''
@@ -201,8 +196,12 @@ class MatchesFactsAggregator:
 
         #pongo coefficientes
         entry['score_competition_diff'] = 2 * (self.counters[match['home']]['score_competition'] - self.counters[match['away']]['score_competition'])
-        entry['ranking_home'] = 2 * entry['ranking_home']
-        entry['ranking_away'] = 2 * entry['ranking_away']
+        entry['tournament_position_home'] = self.tournament_positions[match['home']]
+        entry['tournament_position_away'] = self.tournament_positions[match['away']]
+
+
+        #entry['ranking_home'] = 2 * entry['ranking_home']
+        #entry['ranking_away'] = 2 * entry['ranking_away']
         entry['winner'] = self._winner(match)
 
         return entry
