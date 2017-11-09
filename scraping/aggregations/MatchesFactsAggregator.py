@@ -25,8 +25,8 @@ class MatchesFactsAggregator:
         #Diccionario con los datos recientes. Ver self._update_counters
         self.teams_recent_history = {}
         self.counter_template = {
-            #'played_home': 0,
-            #'played_away': 0,
+            'played_home': 0,
+            'played_away': 0,
 
             'score_competition': 0,
 
@@ -49,6 +49,10 @@ class MatchesFactsAggregator:
             # Goles hechos por cada equipo
             self._add_to_counter(match['home'], 'goals_scored', match['score_home'])
             self._add_to_counter(match['away'], 'goals_scored', match['score_away'])
+
+            # Partidos jugados
+            self._add_to_counter(match['home'], 'played_home', 1)
+            self._add_to_counter(match['away'], 'played_away', 1)
 
             self._add_to_counter(match['home'], 'goals_conceded', match['score_away'])
             self._add_to_counter(match['away'], 'goals_conceded', match['score_home'])
@@ -92,7 +96,6 @@ class MatchesFactsAggregator:
             else:
                 self._add_to_counter(match['away'], 'num_days_without_goals', 1)
 
-            self._generate_tournament_positions()
 
 
     def _generate_tournament_positions(self):
@@ -176,14 +179,11 @@ class MatchesFactsAggregator:
         away_stats = self.counters[match['away']]
 
         entry = {}
+        self._generate_tournament_positions()
 
-        for key in home_stats.keys():
-            entry[key + '_home'] = home_stats[key]
-
-        for key in away_stats.keys():
-            entry[key + '_away'] = away_stats[key]
-
-        self._update_counters(match)
+        entry['score_competition_diff'] = self.counters[match['home']]['score_competition'] - self.counters[match['away']]['score_competition']
+        entry['tournament_position_home'] = self.tournament_positions[match['home']]
+        entry['tournament_position_away'] = self.tournament_positions[match['away']]
 
         entry['season'] = match['season']
         entry['day_num'] = match['day_num']
@@ -194,15 +194,18 @@ class MatchesFactsAggregator:
         entry['score_home'] = match['score_home']
         entry['score_away'] = match['score_away']
 
-        #pongo coefficientes
-        entry['score_competition_diff'] = 2 * (self.counters[match['home']]['score_competition'] - self.counters[match['away']]['score_competition'])
-        entry['tournament_position_home'] = self.tournament_positions[match['home']]
-        entry['tournament_position_away'] = self.tournament_positions[match['away']]
-
-
         #entry['ranking_home'] = 2 * entry['ranking_home']
         #entry['ranking_away'] = 2 * entry['ranking_away']
         entry['winner'] = self._winner(match)
+
+
+        for key in home_stats.keys():
+            entry[key + '_home'] = home_stats[key]
+
+        for key in away_stats.keys():
+            entry[key + '_away'] = away_stats[key]
+
+        self._update_counters(match)
 
         return entry
 
