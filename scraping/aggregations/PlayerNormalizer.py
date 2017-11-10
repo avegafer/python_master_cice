@@ -12,11 +12,14 @@ class PlayerNormalizer:
     def _get_master_list(self):
         result = []
 
+        self.logger.debug('Generating master. it will take some time...')
+
         mongo_wrapper = PrefixedMongoWrapper('laliga_web_primera')
         for match in mongo_wrapper.get_collection('results').find({'season': {"$in": ['primera/2015-16', 'primera/2016-17']}}):
             for stat in mongo_wrapper.get_collection('popups_matches_stats').find({'match_id': match['match_id']}):
                 result.append(stat['player'])
             result = list(set(result))
+        self.logger.debug('Done')
         return result
 
     def _get_marca_list(self):
