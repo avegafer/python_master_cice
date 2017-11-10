@@ -56,11 +56,17 @@ class PopUpScraper:
             else:
                 team = result_info['team2']
 
+            row_counter = 1
             for row in team_details_container.find_all('tr')[:]:
 
                 player = ''
                 stat = ''
                 counter = 0
+
+                if (row_counter <= 11):
+                    main_lineup = True
+                else:
+                    main_lineup = False
 
                 for cell in row.find_all('td')[:]:
 
@@ -70,9 +76,10 @@ class PopUpScraper:
                         stat = cell.getText()
 
                     if player and stat:
-                        results.append({'match_id': self.match_id, 'player': player, 'stats': stat, 'team': team})
+                        results.append({'match_id': self.match_id, 'player': player, 'stats': stat, 'team': team, 'main_lineup': main_lineup})
 
                     counter = counter + 1
+                row_counter = row_counter + 1
             main_counter = main_counter + 1
 
 
