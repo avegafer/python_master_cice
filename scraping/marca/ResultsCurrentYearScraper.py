@@ -1,6 +1,7 @@
 from scraping.core.scrape_request import Sender
 from scraping.core.stdout_logger import Logger
 from scraping.core.prefixed_mongo_wrapper import PrefixedMongoWrapper
+from scraping.marca.MatchDetailsScraper import MatchDetailsScraper
 
 from bs4 import BeautifulSoup
 
@@ -56,7 +57,19 @@ class ResultsCurrentYearScraper:
             for cell in row.find_all('span'):
                 result[colmap[counter % 3]] = cell.getText()
                 counter = counter + 1
+            if row.has_attr('href'):
+                result['url_details'] = row['href']
+                lineups = self._get_lineups(result['url_details'])
+                result['home_lineup'] = lineups['home']
+                result['away_lineup'] = lineups['away']
+
             results.append(result)
 
         self.logger.debug('Inserted ' + str(len(results)) + ' items')
         return results
+
+    def _get_lineups(self, url):
+        scraper = MatchDetailsScraper(url)
+        return scraper.extract_lineups()
+
+
