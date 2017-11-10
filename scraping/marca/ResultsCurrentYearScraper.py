@@ -58,8 +58,7 @@ class ResultsCurrentYearScraper:
                 result[colmap[counter % 3]] = cell.getText()
                 counter = counter + 1
             if row.has_attr('href'):
-                result['url_details'] = row['href']
-                lineups = self._get_lineups(result['url_details'])
+                lineups = self._get_lineups(row['href'])
                 result['home_lineup'] = lineups['home']
                 result['away_lineup'] = lineups['away']
 
