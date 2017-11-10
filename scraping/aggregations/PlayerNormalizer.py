@@ -1,6 +1,7 @@
 from scraping.core.prefixed_mongo_wrapper import PrefixedMongoWrapper
 from scraping.core.stdout_logger import Logger
 import pandas as pd
+from difflib import SequenceMatcher
 
 
 class PlayerNormalizer:
@@ -38,12 +39,8 @@ class PlayerNormalizer:
         self.master = self._get_master_list()
 
         self.logger.debug('Normalizing data...')
-        result = {
-            'master': self.master,
-            'marca': self._normalize_one(self._get_marca_list()),
-        }
 
-        return result
+        return self._normalize_one(self._get_marca_list())
 
     def save_csv(self, result):
         self.logger.debug('Creating ' + self.default_csv_filename)
@@ -54,26 +51,29 @@ class PlayerNormalizer:
 
 
     def _normalize_one(self, players):
+        result = {
+            'master': [],
+            'marca': [],
+        }
 
 
-        from difflib import SequenceMatcher
-        result = []
-
-
-        for master_player in self.master:
+        for player in players:
             best_similarity = 0
             matched = ''
-            for player in players:
+            for master_player in self.master:
 
                 matcher = SequenceMatcher(None, master_player.lower(), player.lower())
                 similarity = matcher.ratio()
                 if (similarity > best_similarity) and (similarity > 0.8):
                     best_similarity = similarity
-                    matched = player
+                    matched = master_player
 
             if matched != '':
-                self.logger.debug('Matched ' + matched + ' with ' + master_player + ' ' + str(best_similarity))
-            result.append(matched)
+                self.logger.log(100, 'Matched ' + player + ' with ' + matched)
+
+            result['master'].append(matched)
+            result['marca'].append(player)
+
         return result
 
 
