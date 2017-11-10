@@ -11,7 +11,6 @@ class ResultsMerger:
     def __init__(self):
 
         self.logger = Logger(2)
-        self.mongo_wrapper = PrefixedMongoWrapper('aggregated_match_results')
         self.mapper = TeamsNormalizer()
 
         self.template = {'season': 'primera/2017-18',
