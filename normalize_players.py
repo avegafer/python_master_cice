@@ -1,4 +1,5 @@
 from scraping.aggregations.PlayerNormalizer import PlayerNormalizer
 
 normalizer = PlayerNormalizer()
-normalizer._get_master_list()
+result = normalizer.normalize()
+normalizer.save_csv(result)
