@@ -10,10 +10,11 @@ class PlayerNormalizer:
 
         self.logger = Logger(2)
         self.default_csv_filename = './players_mapping.csv'
+        self.loaded = False
 
     def find_player_id(self, source, player):
 
-        self.data = self._get_raw_data()
+        self._init_data()
         results_indexes = self.data['master'].index[self.data[source] == player]
         if len(results_indexes) > 1:
             self.logger.error(300, 'More than a candidate')
@@ -25,13 +26,16 @@ class PlayerNormalizer:
         self.logger.error(100, 'Cannot find map for ' + source + ': ' + player)
         return ''
 
-    def _get_raw_data(self):
-        if not os.path.isfile(self.default_csv_filename):
-            data = self.normalize()
-            self.save_csv(data)
+    def _init_data(self):
+        if self.loaded == False:
+            self.logger.debug('Loading map file')
+            if not os.path.isfile(self.default_csv_filename):
+                data = self.normalize()
+                self.save_csv(data)
 
 
-        return pd.read_csv(self.default_csv_filename)
+            self.data = pd.read_csv(self.default_csv_filename)
+            self.loaded = True
 
 
     def _get_master_list(self):
@@ -44,10 +48,17 @@ class PlayerNormalizer:
 
 
         mongo_wrapper = PrefixedMongoWrapper('laliga_web')
+        # datos sacados del apartado "plantillas"
+        #result = mongo_wrapper.get_collection('players').find({'season': 'primera/2016-17'}).distinct('player')
+        #result += mongo_wrapper.get_collection('players').find({'season': 'segunda/2016-17'}).distinct('player')
+
+        # faltan los de la temporada 1928-29 integramos con los resultados de primera y segunda
         result = mongo_wrapper.get_collection('players').distinct('player')
+        result += mongo_wrapper.get_collection('primera_popups_matches_stats').distinct('player')
+        result += mongo_wrapper.get_collection('segunda_popups_matches_stats').distinct('player')
 
         self.logger.debug('Done')
-        return result
+        return list(set(result))
 
     def _get_marca_list(self):
         result = []
@@ -76,6 +87,14 @@ class PlayerNormalizer:
         repo.index += 1
         repo.to_csv(csv_filename)
 
+    def get_valid_players(self):
+        mongo_wrapper = PrefixedMongoWrapper('laliga_web')
+
+        result = mongo_wrapper.get_collection('players').find({'season': 'primera/2016-17'}).distinct('player')
+        result += mongo_wrapper.get_collection('players').find({'season': 'segunda/2016-17'}).distinct('player')
+
+        return result
+
 
     def _normalize_one(self, source, players):
 
@@ -85,22 +104,27 @@ class PlayerNormalizer:
         }
 
         num_matched = 0
+        valid_players = self.get_valid_players()
         for master_player in self.master:
+
             best_similarity = 0
             second_best_similarity = 0
             matched = ''
-            for player in players:
 
-                matcher = SequenceMatcher(None, self.preprocess_name(master_player), self.preprocess_name(player))
-                similarity = matcher.ratio()
-                if (similarity > best_similarity) and (similarity > 0.70) and (second_best_similarity < 0.40) :
-                    second_best_similarity = best_similarity
-                    best_similarity = similarity
-                    matched = player
+            if master_player in valid_players:
 
-            if matched != '':
-                self.logger.debug('Matched ' + matched + ' with ' + master_player + ' ' + str(best_similarity))
-                num_matched += 1
+                for player in players:
+
+                    matcher = SequenceMatcher(None, self.preprocess_name(master_player), self.preprocess_name(player))
+                    similarity = matcher.ratio()
+                    if (similarity > best_similarity) and (similarity > 0.85) and (second_best_similarity < 0.60):
+                        second_best_similarity = best_similarity
+                        best_similarity = similarity
+                        matched = player
+
+                if matched != '':
+                    self.logger.debug('Matched "' + matched + '" with "' + master_player + '" ' + str(best_similarity))
+                    num_matched += 1
 
             result['master'].append(master_player)
             result[source].append(matched)

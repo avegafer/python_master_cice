@@ -1,6 +1,7 @@
 from scraping.core.prefixed_mongo_wrapper import PrefixedMongoWrapper
 from scraping.core.stdout_logger import Logger
 from scraping.aggregations.TeamsNormalizer import TeamsNormalizer
+from scraping.laliga.LineUpManager import LineUpManager
 
 import scraping.laliga.utils
 import pymongo
@@ -43,10 +44,12 @@ class ResultsMerger:
 
 
     def _get_archive_results(self):
-        self.logger.debug('Getting archive results')
+        self.logger.debug('Getting archive results ... this will take time ...')
         wrapper = scraping.laliga.utils.create_mongo_writer()
         archive = wrapper.get_collection('primera_results').find().sort([('day_num', pymongo.ASCENDING)])
         result = []
+
+        lineup_manager = LineUpManager()
 
         #el historico
         for archive_match in archive:
@@ -58,8 +61,10 @@ class ResultsMerger:
             entry['away'] = archive_match['away']
             entry['score_home'] = int(archive_match['score_home'])
             entry['score_away'] = int(archive_match['score_away'])
+            entry['lineup_home'] = lineup_manager.create_by_match_id(archive_match['match_id'], archive_match['home'])
+            entry['lineup_away'] = lineup_manager.create_by_match_id(archive_match['match_id'], archive_match['away'])
 
-
+            self.logger.debug('Processing ' + str(entry))
             result.append(entry)
 
         return result
