@@ -35,16 +35,22 @@ class PlayerNormalizer:
 
 
     def _get_master_list(self):
-
+        '''
+        Siendo que lo que interesa es sacar los jugadores de este año, construimos el master sacando
+        los jugadores del año pasado en primera y segunda
+        :return:
+        '''
         self.logger.debug('Generating master')
 
-        mongo_wrapper = PrefixedMongoWrapper('laliga_web_primera')
+        # ojo que eso es experimental: al parecer los match_id vienen con prefijo por año. 116 es 2016
+        mongo_wrapper_1 = PrefixedMongoWrapper('laliga_web_primera')
+        result_1 = mongo_wrapper_1.get_collection('popups_matches_stats').find({'match_id': {'$regex':'116'}}).distinct('player')
 
-        # ojo que eso es experimental
-        result = mongo_wrapper.get_collection('popups_matches_stats').find({'match_id': {'$regex':'116'}}).distinct('player')
+        mongo_wrapper_2 = PrefixedMongoWrapper('laliga_web_segunda')
+        result_2 = mongo_wrapper_2.get_collection('popups_matches_stats').find({'match_id': {'$regex':'116'}}).distinct('player')
 
         self.logger.debug('Done')
-        return result
+        return result_1 + result_2
 
     def _get_marca_list(self):
         result = []
