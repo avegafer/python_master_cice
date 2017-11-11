@@ -22,3 +22,7 @@ matches_aggregation.py
 laliga.py
 - baja el histórico desde laliga.es
 
+laliga_players.py
+- baja los jugadores de la temporada pasada desde http://www.laliga.es/estadisticas-historicas/plantillas
+sirve para el mapeo con los datos de marca
+

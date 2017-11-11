@@ -42,15 +42,12 @@ class PlayerNormalizer:
         '''
         self.logger.debug('Generating master')
 
-        # ojo que eso es experimental: al parecer los match_id vienen con prefijo por año. 116 es 2016
-        mongo_wrapper_1 = PrefixedMongoWrapper('laliga_web_primera')
-        result_1 = mongo_wrapper_1.get_collection('popups_matches_stats').find({'match_id': {'$regex':'116'}}).distinct('player')
 
-        mongo_wrapper_2 = PrefixedMongoWrapper('laliga_web_segunda')
-        result_2 = mongo_wrapper_2.get_collection('popups_matches_stats').find({'match_id': {'$regex':'116'}}).distinct('player')
+        mongo_wrapper = PrefixedMongoWrapper('laliga_web')
+        result = mongo_wrapper.get_collection('players').distinct('player')
 
         self.logger.debug('Done')
-        return result_1 + result_2
+        return result
 
     def _get_marca_list(self):
         result = []
