@@ -3,7 +3,7 @@ from scraping.core.stdout_logger import Logger
 import pandas as pd
 from difflib import SequenceMatcher
 import os
-import re
+
 
 class PlayerNormalizer:
     def __init__(self):
