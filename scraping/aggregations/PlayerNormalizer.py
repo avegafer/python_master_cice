@@ -109,6 +109,11 @@ class PlayerNormalizer:
             result[source].append(matched)
 
         self.logger.debug(str(len(players)) + ' players, ' + str(num_matched) + ' matched')
+
+        for source_player in players:
+            if source_player not in result[source]:
+                self.logger.log(50, 'Unmatched ' + source_player)
+
         return result
 
 
