@@ -3,7 +3,7 @@ from scraping.core.stdout_logger import Logger
 import pandas as pd
 from difflib import SequenceMatcher
 import os
-
+import re
 
 class PlayerNormalizer:
     def __init__(self):
@@ -39,7 +39,9 @@ class PlayerNormalizer:
         self.logger.debug('Generating master')
 
         mongo_wrapper = PrefixedMongoWrapper('laliga_web_primera')
-        result = mongo_wrapper.get_collection('popups_matches_stats').find().distinct('player')
+
+        # ojo que eso es experimental
+        result = mongo_wrapper.get_collection('popups_matches_stats').find({'match_id': {'$regex':'116'}}).distinct('player')
 
         self.logger.debug('Done')
         return result
@@ -61,7 +63,7 @@ class PlayerNormalizer:
 
         self.logger.debug('Normalizing data...')
 
-        return self._normalize_one(self._get_marca_list())
+        return self._normalize_one('marca', self._get_marca_list())
 
     def save_csv(self, result):
         self.logger.debug('Creating ' + self.default_csv_filename)
@@ -72,29 +74,35 @@ class PlayerNormalizer:
         repo.to_csv(csv_filename)
 
 
-    def _normalize_one(self, players):
+    def _normalize_one(self, source, players):
 
         result = {
             'master': [],
-            'marca': [],
+            source: [],
         }
 
+        num_matched = 0
         for master_player in self.master:
             best_similarity = 0
+            second_best_similarity = 0
             matched = ''
             for player in players:
 
                 matcher = SequenceMatcher(None, master_player.lower(), player.lower())
                 similarity = matcher.ratio()
-                if (similarity > best_similarity) and (similarity > 0.95):
+                if (similarity > best_similarity) and (similarity > 0.75) and (second_best_similarity < 0.60) :
+                    second_best_similarity = best_similarity
                     best_similarity = similarity
                     matched = player
 
             if matched != '':
                 self.logger.debug('Matched ' + matched + ' with ' + master_player + ' ' + str(best_similarity))
+                num_matched += 1
 
             result['master'].append(master_player)
-            result['marca'].append(matched)
+            result[source].append(matched)
+
+        self.logger.debug(str(len(players)) + ' players, ' + str(num_matched) + ' matched')
         return result
 
 
