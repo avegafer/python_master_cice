@@ -2,6 +2,7 @@ from scraping.core.prefixed_mongo_wrapper import PrefixedMongoWrapper
 from scraping.core.stdout_logger import Logger
 import pandas as pd
 from difflib import SequenceMatcher
+import os
 
 
 class PlayerNormalizer:
@@ -9,6 +10,29 @@ class PlayerNormalizer:
 
         self.logger = Logger(2)
         self.default_csv_filename = './players_mapping.csv'
+
+    def find_player_id(self, source, player):
+
+        self.data = self._get_raw_data()
+        results_indexes = self.data['master'].index[self.data[source] == player]
+        if len(results_indexes) > 1:
+            self.logger.error('More than a candidate')
+
+
+        for result in results_indexes:
+            return result
+
+        self.logger.error(100, 'Cannot find map for ' + source + ': ' + player)
+        return ''
+
+    def _get_raw_data(self):
+        if not os.path.isfile(self.default_csv_filename):
+            data = self.normalize()
+            self.save_csv(data)
+
+
+        return pd.read_csv(self.default_csv_filename)
+
 
     def _get_master_list(self):
 
@@ -44,33 +68,35 @@ class PlayerNormalizer:
         csv_filename = self.default_csv_filename
 
         repo = pd.DataFrame(result)
+        repo.index += 1
         repo.to_csv(csv_filename)
 
 
     def _normalize_one(self, players):
+
+
+        from difflib import SequenceMatcher
         result = {
             'master': [],
             'marca': [],
         }
 
-
-        for player in players:
+        for master_player in self.master:
             best_similarity = 0
             matched = ''
-            for master_player in self.master:
+            for player in players:
 
                 matcher = SequenceMatcher(None, master_player.lower(), player.lower())
                 similarity = matcher.ratio()
-                if (similarity > best_similarity) and (similarity > 0.8):
+                if (similarity > best_similarity) and (similarity > 0.95):
                     best_similarity = similarity
-                    matched = master_player
+                    matched = player
 
             if matched != '':
-                self.logger.log(100, 'Matched ' + player + ' with ' + matched + ' ' + str(best_similarity))
+                self.logger.debug('Matched ' + matched + ' with ' + master_player + ' ' + str(best_similarity))
 
-            result['master'].append(matched)
-            result['marca'].append(player)
-
+            result['master'].append(master_player)
+            result['marca'].append(matched)
         return result
 
 
