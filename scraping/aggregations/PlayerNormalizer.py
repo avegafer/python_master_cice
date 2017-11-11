@@ -74,8 +74,6 @@ class PlayerNormalizer:
 
     def _normalize_one(self, players):
 
-
-        from difflib import SequenceMatcher
         result = {
             'master': [],
             'marca': [],
