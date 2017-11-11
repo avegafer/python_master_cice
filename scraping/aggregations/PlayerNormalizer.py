@@ -16,7 +16,7 @@ class PlayerNormalizer:
         self.data = self._get_raw_data()
         results_indexes = self.data['master'].index[self.data[source] == player]
         if len(results_indexes) > 1:
-            self.logger.error('More than a candidate')
+            self.logger.error(300, 'More than a candidate')
 
 
         for result in results_indexes:
