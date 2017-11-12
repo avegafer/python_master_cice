@@ -26,7 +26,7 @@ class ResultsMerger:
         self.logger.debug('Merging...')
 
         results = []
-        #results += self._get_archive_results()
+        results += self._get_archive_results()
         results += self._get_current_results()
 
         self.logger.debug('Processed ' + str(len(results)) + ' matches')
