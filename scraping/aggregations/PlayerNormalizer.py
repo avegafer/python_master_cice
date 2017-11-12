@@ -30,20 +30,13 @@ class PlayerNormalizer:
         if self.loaded == False:
             self.logger.debug('Loading map file')
             if not os.path.isfile(self.default_csv_filename):
-                data = self.normalize()
-                self.save_csv(data)
-
+                self.init_map_file()
 
             self.data = pd.read_csv(self.default_csv_filename)
             self.loaded = True
 
 
-    def _get_master_list(self):
-        '''
-        Siendo que lo que interesa es sacar los jugadores de este año, construimos el master sacando
-        los jugadores del año pasado en primera y segunda
-        :return:
-        '''
+    def init_map_file(self):
         self.logger.debug('Generating master')
 
 
@@ -58,7 +51,9 @@ class PlayerNormalizer:
         result += mongo_wrapper.get_collection('segunda_popups_matches_stats').distinct('player')
 
         self.logger.debug('Done')
-        return list(set(result))
+        data = {'master': list(set(result))}
+        self.save_csv(data)
+
 
     def _get_marca_list(self):
         result = []
@@ -72,9 +67,10 @@ class PlayerNormalizer:
 
         return list(set(result))
 
-    def normalize(self):
-        self.master = self._get_master_list()
 
+
+    def normalize(self):
+        self._init_data()
         self.logger.debug('Normalizing data...')
 
         return self._normalize_one('marca', self._get_marca_list())
@@ -105,7 +101,7 @@ class PlayerNormalizer:
 
         num_matched = 0
         valid_players = self.get_valid_players()
-        for master_player in self.master:
+        for master_player in self.data['master']:
 
             best_similarity = 0
             second_best_similarity = 0
