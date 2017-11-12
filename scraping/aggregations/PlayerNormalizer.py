@@ -120,7 +120,7 @@ class PlayerNormalizer:
                     matcher = SequenceMatcher(None, self.preprocess_name(master_player), self.preprocess_name(player))
                     similarity = matcher.ratio()
                     if (similarity > best_similarity) and \
-                            (similarity > 0.85) and \
+                            (similarity > 0.95) and \
                             (second_best_similarity < 0.60) and \
                             (player not in already_got):
 
