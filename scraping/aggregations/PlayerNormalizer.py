@@ -17,7 +17,7 @@ class PlayerNormalizer:
         self._init_data()
         results_indexes = self.data['master'].index[self.data[source] == player]
         if len(results_indexes) > 1:
-            self.logger.error(300, 'More than a candidate')
+            self.logger.error(300, 'More than a candidate ('+str(len(results_indexes))+'): ' + player)
 
 
         for result in results_indexes:
@@ -86,10 +86,11 @@ class PlayerNormalizer:
     def get_valid_players(self):
         mongo_wrapper = PrefixedMongoWrapper('laliga_web')
 
-        result = mongo_wrapper.get_collection('players').find({'season': 'primera/2016-17'}).distinct('player')
+        result = mongo_wrapper.get_collection('primera_popups_matches_stats').distinct('player')
+        result += mongo_wrapper.get_collection('players').find({'season': 'primera/2016-17'}).distinct('player')
         result += mongo_wrapper.get_collection('players').find({'season': 'segunda/2016-17'}).distinct('player')
 
-        return result
+        return list(set(result))
 
 
     def _normalize_one(self, source, players):
@@ -101,6 +102,11 @@ class PlayerNormalizer:
 
         num_matched = 0
         valid_players = self.get_valid_players()
+        #print(valid_players)
+        #exit()
+
+        already_got = []
+
         for master_player in self.data['master']:
 
             best_similarity = 0
@@ -113,17 +119,23 @@ class PlayerNormalizer:
 
                     matcher = SequenceMatcher(None, self.preprocess_name(master_player), self.preprocess_name(player))
                     similarity = matcher.ratio()
-                    if (similarity > best_similarity) and (similarity > 0.85) and (second_best_similarity < 0.60):
+                    if (similarity > best_similarity) and \
+                            (similarity > 0.85) and \
+                            (second_best_similarity < 0.60) and \
+                            (player not in already_got):
+
                         second_best_similarity = best_similarity
                         best_similarity = similarity
                         matched = player
 
                 if matched != '':
                     self.logger.debug('Matched "' + matched + '" with "' + master_player + '" ' + str(best_similarity))
+                    already_got.append(matched)
                     num_matched += 1
 
             result['master'].append(master_player)
             result[source].append(matched)
+
 
 
         self.logger.debug(str(len(players)) + ' players, ' + str(num_matched) + ' matched')

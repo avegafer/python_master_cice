@@ -26,7 +26,7 @@ class ResultsMerger:
         self.logger.debug('Merging...')
 
         results = []
-        results += self._get_archive_results()
+        #results += self._get_archive_results()
         results += self._get_current_results()
 
         self.logger.debug('Processed ' + str(len(results)) + ' matches')
@@ -86,9 +86,10 @@ class ResultsMerger:
 
         result = []
         wrapper = PrefixedMongoWrapper('marca')
+        lineup_manager = LineUpManager()
 
         #los actuales bajados por la web de marca
-        for day in wrapper.get_collection('current_season_results').find():
+        for day in wrapper.get_collection('current_season_results').find({"results.home_lineup": {"$exists": True}}):
             for match in day['results']:
 
                 match['result'] = self._marca_process_result(match['result'])
@@ -107,6 +108,8 @@ class ResultsMerger:
                     entry['score_home'] = match['result']
                     entry['score_away'] = match['result']
 
+                entry['lineup_home'] = lineup_manager.create_by_list(match['home_lineup'])
+                entry['lineup_away'] = lineup_manager.create_by_list(match['away_lineup'])
 
                 result.append(entry)
         return result
