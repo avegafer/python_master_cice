@@ -46,7 +46,10 @@ class ResultsMerger:
     def _get_archive_results(self):
         self.logger.debug('Getting archive results ... this will take time ...')
         wrapper = scraping.laliga.utils.create_mongo_writer()
-        archive = wrapper.get_collection('primera_results').find().sort([('day_num', pymongo.ASCENDING)])
+        archive = wrapper.get_collection('primera_results').\
+            find({'season': {'$in': ['primera/2015-16', 'primera/2016-17']}}).\
+            sort([('day_num', pymongo.ASCENDING)])
+
         result = []
 
         lineup_manager = LineUpManager()

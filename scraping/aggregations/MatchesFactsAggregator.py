@@ -29,13 +29,32 @@ class MatchesFactsAggregator:
             'played_away': 0,
 
             'score_competition': 0,
+            #'score_competition_home': 0,
+            #'score_competition_away': 0,
 
-            'goals_scored': 0,
-            'goals_conceded': 0,
+            'matches_won_home': 0,
+            'matches_won_away': 0,
 
-            'num_days_without_goals': 0,
-            'num_days_without_victory': 0,
-            'ranking': 0
+            'matches_tied_home': 0,
+            'matches_tied_away': 0,
+
+            'matches_lost_home': 0,
+            'matches_lost_away': 0,
+
+            'goals_scored_home': 0,
+            'goals_scored_away': 0,
+
+            'goals_conceded_home': 0,
+            'goals_conceded_away': 0,
+
+            'num_days_without_goals_home': 0,
+            'num_days_without_goals_away': 0,
+
+            'num_days_without_victory_home': 0,
+            'num_days_without_victory_away': 0,
+
+            'ranking_home': 0,
+            'ranking_away': 0
 
         }
 
@@ -47,54 +66,63 @@ class MatchesFactsAggregator:
         if match_winner != '':
 
             # Goles hechos por cada equipo
-            self._add_to_counter(match['home'], 'goals_scored', match['score_home'])
-            self._add_to_counter(match['away'], 'goals_scored', match['score_away'])
+            self._add_to_counter(match['home'], 'goals_scored_home', match['score_home'])
+            self._add_to_counter(match['away'], 'goals_scored_away', match['score_away'])
 
             # Partidos jugados
             self._add_to_counter(match['home'], 'played_home', 1)
             self._add_to_counter(match['away'], 'played_away', 1)
 
-            self._add_to_counter(match['home'], 'goals_conceded', match['score_away'])
-            self._add_to_counter(match['away'], 'goals_conceded', match['score_home'])
+            self._add_to_counter(match['home'], 'goals_conceded_home', match['score_away'])
+            self._add_to_counter(match['away'], 'goals_conceded_away', match['score_home'])
+
+            # Partidos ganados, empatados, perdidos
+            key_map = {'home': 'matches_won_home', 'away': 'matches_lost_home', 'none': 'matches_tied_home'}
+            self._add_to_counter(match['home'], key_map[match_winner], 1)
+
+            key_map = {'home': 'matches_lost_away', 'away': 'matches_won_away', 'none': 'matches_tied_away'}
+            self._add_to_counter(match['away'], key_map[match_winner], 1)
 
             # añado al historiar los goles hechos
             self.teams_recent_history[match['home']]['goals'].append(int(match['score_home']))
             self.teams_recent_history[match['away']]['goals'].append(int(match['score_away']))
 
             # Suma de los goles hechos en los últimos 5 días
-            self._set_counter(match['home'], 'ranking', sum(self.teams_recent_history[match['home']]['goals'][-5:]))
-            self._set_counter(match['away'], 'ranking', sum(self.teams_recent_history[match['away']]['goals'][-5:]))
+            self._set_counter(match['home'], 'ranking_home', sum(self.teams_recent_history[match['home']]['goals'][-5:]))
+            self._set_counter(match['away'], 'ranking_away', sum(self.teams_recent_history[match['away']]['goals'][-5:]))
 
             # Puntos
             key_map = {'home': 3, 'away': 0, 'none': 1}
+            #self._add_to_counter(match['home'], 'score_competition_home', key_map[match_winner])
             self._add_to_counter(match['home'], 'score_competition', key_map[match_winner])
 
             key_map = {'home': 0, 'away': 3, 'none': 1}
+            #self._add_to_counter(match['away'], 'score_competition_away', key_map[match_winner])
             self._add_to_counter(match['away'], 'score_competition', key_map[match_winner])
 
             # Días sin ganar
             if match_winner == 'home':
-                self._set_counter(match['home'], 'num_days_without_victory', 0)
-                self._add_to_counter(match['away'], 'num_days_without_victory', 1)
+                self._set_counter(match['home'], 'num_days_without_victory_home', 0)
+                self._add_to_counter(match['away'], 'num_days_without_victory_away', 1)
 
             if match_winner == 'away':
-                self._set_counter(match['away'], 'num_days_without_victory', 0)
-                self._add_to_counter(match['home'], 'num_days_without_victory', 1)
+                self._set_counter(match['away'], 'num_days_without_victory_home', 0)
+                self._add_to_counter(match['home'], 'num_days_without_victory_away', 1)
 
             if match_winner == 'none':
-                self._add_to_counter(match['home'], 'num_days_without_victory', 1)
-                self._add_to_counter(match['away'], 'num_days_without_victory', 1)
+                self._add_to_counter(match['home'], 'num_days_without_victory_home', 1)
+                self._add_to_counter(match['away'], 'num_days_without_victory_away', 1)
 
             # Días sin marcar
             if int(match['score_home']) > 0:
-                self._set_counter(match['home'], 'num_days_without_goals', 0)
+                self._set_counter(match['home'], 'num_days_without_goals_home', 0)
             else:
-                self._add_to_counter(match['home'], 'num_days_without_goals', 1)
+                self._add_to_counter(match['home'], 'num_days_without_goals_home', 1)
 
             if int(match['score_away']) > 0:
-                self._set_counter(match['away'], 'num_days_without_goals', 0)
+                self._set_counter(match['away'], 'num_days_without_goals_away', 0)
             else:
-                self._add_to_counter(match['away'], 'num_days_without_goals', 1)
+                self._add_to_counter(match['away'], 'num_days_without_goals_away', 1)
 
 
 
@@ -161,6 +189,8 @@ class MatchesFactsAggregator:
         import pandas as pd
 
         data = {}
+        #print(self.results[0].keys())
+        #exit()
         for column in self.results[0].keys():
             data[column] = []
 
@@ -190,6 +220,9 @@ class MatchesFactsAggregator:
 
         entry['team_home'] = match['home']
         entry['team_away'] = match['away']
+
+        entry['lineup_home'] = match['lineup_home']
+        entry['lineup_away'] = match['lineup_away']
 
         entry['score_home'] = match['score_home']
         entry['score_away'] = match['score_away']
