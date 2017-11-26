@@ -17,15 +17,26 @@ class MatchDetailsScraper:
         self.logger.debug('Processing lineups of ' + self.url)
 
         html = BeautifulSoup(response, 'html.parser')
+        result = {
+            'home': '',
+            'away': ''
 
-        teams_container = html.find('section', {'class': 'laliga-fantasy columna2'}).find_all('section')[:2]
-        home_container = teams_container[0]
-        away_container = teams_container[1]
-
-        return {
-            'home': self._extract_players(home_container),
-            'away': self._extract_players(away_container)
         }
+
+        teams_container_main = html.find('section', {'class': 'laliga-fantasy columna2'})
+        if not teams_container_main is None:
+            teams_container = teams_container_main.find_all('section')[:2]
+            home_container = teams_container[0]
+            away_container = teams_container[1]
+
+            result = {
+                'home': self._extract_players(home_container),
+                'away': self._extract_players(away_container)
+            }
+        else:
+            self.logger.error(500, 'No lineup found in ' + self.url)
+
+        return result
 
     def _extract_players(self, team_container):
         result = []

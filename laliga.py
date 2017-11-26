@@ -5,10 +5,7 @@ from multiprocessing import Pool
 
 
 # las temporadas a procesar
-
-#seasons = utils.build_seasons('primera', 2001) + utils.build_seasons('segunda', 2001)
-seasons = utils.build_seasons('primera', 1928)
-#seasons = build_league('primera', 1928) + build_league('segunda', 1993)
+seasons = utils.build_seasons('primera', 1928) + utils.build_seasons('segunda', 2016)
 
 def scrape_season(season):
 
