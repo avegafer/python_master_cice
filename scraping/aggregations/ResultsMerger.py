@@ -92,9 +92,8 @@ class ResultsMerger:
         lineup_manager = LineUpManager()
 
         #los actuales bajados por la web de marca
-        for day in wrapper.get_collection('current_season_results').find({"results.home_lineup": {"$exists": True}}):
+        for day in wrapper.get_collection('current_season_results').find({}):
             for match in day['results']:
-
                 match['result'] = self._marca_process_result(match['result'])
 
                 entry = self.template.copy()
@@ -111,9 +110,9 @@ class ResultsMerger:
                     entry['score_home'] = match['result']
                     entry['score_away'] = match['result']
 
-                entry['lineup_home'] = lineup_manager.create_by_list(match['home_lineup'])
-                entry['lineup_away'] = lineup_manager.create_by_list(match['away_lineup'])
-
+                if 'home_lineup' in match.keys():
+                    entry['lineup_home'] = lineup_manager.create_by_list(match['home_lineup'])
+                    entry['lineup_away'] = lineup_manager.create_by_list(match['away_lineup'])
                 result.append(entry)
         return result
 
