@@ -112,7 +112,15 @@ class ResultsMerger:
 
                 if 'home_lineup' in match.keys():
                     entry['lineup_home'] = lineup_manager.create_by_list(match['home_lineup'])
+                else:
+                    entry['lineup_home'] = ''
+
+                if 'away_lineup' in match.keys():
                     entry['lineup_away'] = lineup_manager.create_by_list(match['away_lineup'])
+                else:
+                    entry['lineup_away'] = ''
+
+
                 result.append(entry)
         return result
 
