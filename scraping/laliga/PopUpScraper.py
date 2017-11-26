@@ -90,7 +90,9 @@ class PopUpScraper:
             'match_id': self.match_id,
             'coach_home': result_info['coach1'],
             'coach_away': result_info['coach2'],
-            'stadium': header['stadium']
+            'stadium': header['stadium'],
+            'day': header['day']
+
         }
 
         self.writer.write_dictionary('matches_data', match_data)
