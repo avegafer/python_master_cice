@@ -15,5 +15,5 @@ for season in seasons:
 aggregator.write_data_csv(csv_filename + '_past.csv')
 
 aggregator = MatchesFactsAggregator(2)
-aggregator.process_matches_to_play('primera/2017-18')
-aggregator.write_data_csv(csv_filename + '_future.csv')
+#aggregator.process_matches_to_play('primera/2017-18')
+#aggregator.write_data_csv(csv_filename + '_future.csv')
